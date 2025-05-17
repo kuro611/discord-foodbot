@@ -1,7 +1,6 @@
 import os
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
 from discord.ui import View, Button
 from discord import app_commands
 
@@ -9,14 +8,13 @@ import psycopg2
 import random
 
 # 環境変数読み込み
-load_dotenv()
-TOKEN = os.getenv("DISCORD_TOKEN")
-DATABASE_URL = os.getenv("DATABASE_URL")
+TOKEN = os.environ.get("DISCORD_TOKEN")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 import google.generativeai as genai
-import os
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+genai.configure(api_key=GEMINI_API_KEY)
 
 # DBからマスタ取得
 genre_map = {}
