@@ -387,7 +387,25 @@ async def show_user_history(channel, user_id):
 
     await channel.send("\n".join(lines))
 
+def load_master_data():
+    global genre_map, style_map
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT code, name FROM genres")
+        genre_map = {code: name for code, name in cursor.fetchall()}
+
+        cursor.execute("SELECT code, name FROM styles")
+        style_map = {code: name for code, name in cursor.fetchall()}
+
+        cursor.close()
+        conn.close()
+        print("✅ DBからジャンル・スタイル情報をロードしました")
+    except Exception as e:
+        print(f"❌ マスタロード失敗: {e}")
+
 # Bot起動
 def run_bot():
+    load_master_data() 
     bot.run(TOKEN)
-    print("👀 bot.py 最後まで読み込まれました")
