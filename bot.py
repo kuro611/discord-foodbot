@@ -22,6 +22,8 @@ genai.configure(api_key=GEMINI_API_KEY)
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+bot.genre_map = {}
+bot.style_map = {}
 
 # PostgreSQLからランダムで料理を取得
 def get_random_food(food_type: str):
@@ -50,6 +52,7 @@ def get_random_food(food_type: str):
 async def on_ready():
     print("🔔 on_ready() が呼ばれました")
     await bot.tree.sync()
+    load_master()
     print(f"Bot起動完了: {bot.user}")
     
 async def load_master():
