@@ -49,6 +49,7 @@ def get_random_food(food_type: str):
 # 起動時の処理
 @bot.event
 async def on_ready():
+    print("🔔 on_ready() が呼ばれました")
     await bot.tree.sync()
     global genre_map, style_map
     try:
