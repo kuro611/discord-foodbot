@@ -71,9 +71,6 @@ async def on_ready():
     except Exception as e:
         print(f"❌ マスタ情報のロードに失敗: {e}")
     print(f"Bot起動完了: {bot.user}")
-    channel = bot.get_channel(908015473289994253)
-    if channel:
-        await channel.send("🔔 on_ready() が呼ばれました（Botから送信）")
     
 @bot.tree.command(name="genres", description="ジャンル一覧を表示します")
 async def list_genres(interaction: discord.Interaction):
