@@ -395,15 +395,22 @@ def run_bot():
     try:
         print(f"🔧 DB接続開始：{DATABASE_URL}")
         conn = psycopg2.connect(DATABASE_URL)
+        print("tarce1")
         cursor = conn.cursor()
+        print("tarce2")
 
         cursor.execute("SELECT code, name FROM genres")
+        print("tarce3")
         genre_map = {code: name for code, name in cursor.fetchall()}
+        print("tarce4")
 
         cursor.execute("SELECT code, name FROM styles")
+        print("tarce5")
         style_map = {code: name for code, name in cursor.fetchall()}
+        print("tarce6")
 
         cursor.close()
+        print("tarce7")
         conn.close()
         print("✅ DBからジャンル・スタイル情報をロードしました")
     except Exception as e:
