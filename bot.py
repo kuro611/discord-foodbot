@@ -18,10 +18,6 @@ import google.generativeai as genai
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 
-# DBからマスタ取得
-genre_map = {}
-style_map = {}
-
 # Botの設定
 intents = discord.Intents.default()
 intents.message_content = True
@@ -54,41 +50,41 @@ def get_random_food(food_type: str):
 async def on_ready():
     print("🔔 on_ready() が呼ばれました")
     await bot.tree.sync()
-    global genre_map, style_map
+    await load_master()
+    print(f"Bot起動完了: {bot.user}")
+    
+async def load_master():
     try:
+        print("🔧 DB接続開始")
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
 
-        # ジャンル取得
         cursor.execute("SELECT code, name FROM genres")
-        genre_map = {code: name for code, name in cursor.fetchall()}
+        bot.genre_map = {code: name for code, name in cursor.fetchall()}
 
-        # スタイル取得
         cursor.execute("SELECT code, name FROM styles")
-        style_map = {code: name for code, name in cursor.fetchall()}
+        bot.style_map = {code: name for code, name in cursor.fetchall()}
 
         cursor.close()
         conn.close()
-
-        print("✅ マスタ情報をDBからロードしました")
+        print("✅ DBマスタ取得成功")
     except Exception as e:
-        print(f"❌ マスタ情報のロードに失敗: {e}")
-    print(f"Bot起動完了: {bot.user}")
-    
+        print(f"❌ DBマスタ取得失敗: {e}")
+
 @bot.tree.command(name="genres", description="ジャンル一覧を表示します")
 async def list_genres(interaction: discord.Interaction):
-    if not genre_map:
+    if not bot.genre_map:
         await interaction.response.send_message("ジャンル情報がありません。", ephemeral=True)
         return
-    text = "📚 登録ジャンル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in genre_map.items()])
+    text = "📚 登録ジャンル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in bot.genre_map.items()])
     await interaction.response.send_message(text, ephemeral=True)
 
 @bot.tree.command(name="styles", description="スタイル一覧を表示します")
 async def list_styles(interaction: discord.Interaction):
-    if not style_map:
+    if not bot.style_map:
         await interaction.response.send_message("スタイル情報がありません。", ephemeral=True)
         return
-    text = "🎨 登録スタイル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in style_map.items()])
+    text = "🎨 登録スタイル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in bot.style_map.items()])
     await interaction.response.send_message(text, ephemeral=True)
     
 
@@ -164,7 +160,7 @@ user_states = {}
 class GenreView(View):
     def __init__(self):
         super().__init__(timeout=60)
-        for code, name in genre_map.items():
+        for code, name in bot.genre_map.items():
             self.add_item(GenreButton(label=name, genre_code=code))
 
 class GenreButton(Button):
@@ -181,7 +177,7 @@ class GenreButton(Button):
 class StyleView(View):
     def __init__(self):
         super().__init__(timeout=60)
-        for code, name in style_map.items():
+        for code, name in bot.style_map.items():
             self.add_item(StyleButton(label=name, style_code=code))
 
 
@@ -313,8 +309,8 @@ async def show_consult_result(target, user_id):
     del user_states[user_id]
 
 def get_gemini_suggestion(genre_code, style_code, request_text):
-    genre = genre_map.get(genre_code, genre_code)
-    style = style_map.get(style_code, style_code)
+    genre = bot.genre_map.get(genre_code, genre_code)
+    style = bot.style_map.get(style_code, style_code)
 
     prompt = f"""ユーザーが「{genre}」を食べたい気分で、「{style}」な料理が食べたいと言っています。
 また、以下の要望があります。「{request_text}」
@@ -384,40 +380,12 @@ async def show_user_history(channel, user_id):
     marks = ["!!!", "!!", "!"]
     lines = []
     for i, (food, genre, style, _) in enumerate(rows):
-        genre_name = genre_map.get(genre, genre)
-        style_name = style_map.get(style, style)
+        genre_name = bot.genre_map.get(genre, genre)
+        style_name = bot.style_map.get(style, style)
         lines.append(f"{i+1}位： {food}{marks[i]} {{{genre_name}（{style_name}）}}")
 
     await channel.send("\n".join(lines))
 
 # Bot起動
 def run_bot():
-    print("マスター取得開始")
-    global genre_map, style_map
-    try:
-        print(f"🔧 DB接続開始：{DATABASE_URL}")
-        conn = psycopg2.connect(DATABASE_URL)
-        print("tarce1")
-        cursor = conn.cursor()
-        print("tarce2")
-
-        cursor.execute("SELECT code, name FROM genres")
-        print("tarce3")
-        genre_map = {code: name for code, name in cursor.fetchall()}
-        print("tarce4")
-
-        cursor.execute("SELECT code, name FROM styles")
-        print("tarce5")
-        style_map = {code: name for code, name in cursor.fetchall()}
-        print("tarce6")
-
-        cursor.close()
-        print("tarce7")
-        conn.close()
-        print("✅ DBからジャンル・スタイル情報をロードしました")
-    except Exception as e:
-        print(f"❌ マスタロード失敗: {e}")
-        traceback.print_exc()
-        sys.exit(1)
-    print("マスター取得処理が終わりました")
     bot.run(TOKEN)
