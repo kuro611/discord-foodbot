@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord.ui import View, Button
 from discord import app_commands
 import traceback
+import sys
 
 import psycopg2
 import random
@@ -44,6 +45,7 @@ def get_random_food(food_type: str):
         return result[0] if result else "候補が見つかりませんでした。"
     except Exception as e:
         print(f"DBエラー: {e}")
+        traceback.print_exc()
         return "トラブルブリブリ"
 
 
@@ -416,5 +418,6 @@ def run_bot():
     except Exception as e:
         print(f"❌ マスタロード失敗: {e}")
         traceback.print_exc()
+        sys.exit(1)
     print("マスター取得処理が終わりました")
     bot.run(TOKEN)
