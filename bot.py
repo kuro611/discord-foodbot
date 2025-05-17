@@ -390,3 +390,4 @@ async def show_user_history(channel, user_id):
 # Bot起動
 def run_bot():
     bot.run(TOKEN)
+    print("👀 bot.py 最後まで読み込まれました")
