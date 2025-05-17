@@ -1,5 +1,5 @@
 discord.py
-python-dotenv
 psycopg2-binary
 flask
+python-dotenv
 google-generativeai
