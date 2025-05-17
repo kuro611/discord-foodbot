@@ -56,6 +56,7 @@ async def on_ready():
     print(f"Bot起動完了: {bot.user}")
     
 async def load_master():
+    global genre_map, style_map 
     try:
         print("🔧 DB接続開始")
         conn = psycopg2.connect(DATABASE_URL)
