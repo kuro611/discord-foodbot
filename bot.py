@@ -387,9 +387,9 @@ async def show_user_history(channel, user_id):
 
     await channel.send("\n".join(lines))
 
-async def load_master_data():
-    await bot.tree.sync()
-    print("マスター取得を確実に開始します")
+# Bot起動
+def run_bot():
+    print("マスター取得開始")
     global genre_map, style_map
     try:
         conn = psycopg2.connect(DATABASE_URL)
@@ -406,9 +406,5 @@ async def load_master_data():
         print("✅ DBからジャンル・スタイル情報をロードしました")
     except Exception as e:
         print(f"❌ マスタロード失敗: {e}")
-
-# Bot起動
-def run_bot():
-    print("マスター取得開始")
-    load_master_data() 
+    print("マスター取得処理が終わりました")
     bot.run(TOKEN)
