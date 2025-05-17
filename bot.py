@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from discord.ui import View, Button
 from discord import app_commands
+import traceback
 
 import psycopg2
 import random
@@ -392,6 +393,7 @@ def run_bot():
     print("マスター取得開始")
     global genre_map, style_map
     try:
+        print(f"🔧 DB接続開始：{DATABASE_URL}")
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
 
@@ -406,5 +408,6 @@ def run_bot():
         print("✅ DBからジャンル・スタイル情報をロードしました")
     except Exception as e:
         print(f"❌ マスタロード失敗: {e}")
+        traceback.print_exc()
     print("マスター取得処理が終わりました")
     bot.run(TOKEN)
