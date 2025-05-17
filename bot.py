@@ -52,7 +52,7 @@ def get_random_food(food_type: str):
 async def on_ready():
     print("🔔 on_ready() が呼ばれました")
     await bot.tree.sync()
-    load_master()
+    await load_master()
     print(f"Bot起動完了: {bot.user}")
     
 async def load_master():
@@ -76,14 +76,14 @@ async def load_master():
 @bot.tree.command(name="genres", description="ジャンル一覧を表示します")
 async def list_genres(interaction: discord.Interaction):
     if not bot.genre_map:
-        load_master()
+        await load_master()
     text = "📚 登録ジャンル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in bot.genre_map.items()])
     await interaction.response.send_message(text, ephemeral=True)
 
 @bot.tree.command(name="styles", description="スタイル一覧を表示します")
 async def list_styles(interaction: discord.Interaction):
     if not bot.style_map:
-        load_master()
+        await load_master()
     text = "🎨 登録スタイル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in bot.style_map.items()])
     await interaction.response.send_message(text, ephemeral=True)
     
@@ -141,7 +141,7 @@ async def on_message(message):
     # メンションされたら
     if bot.user.mentioned_in(message):
         if not bot.genre_map or not bot.style_map:
-            load_master()
+            await load_master()
 
         if "過去のおすすめ" in message.content:
             await show_user_history(message.channel, user_id)
