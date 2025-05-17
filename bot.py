@@ -389,4 +389,5 @@ async def show_user_history(channel, user_id):
     await channel.send("\n".join(lines))
 
 # Bot起動
-bot.run(TOKEN)
+def run_bot():
+    bot.run(TOKEN)
