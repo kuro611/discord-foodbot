@@ -1,0 +1,5 @@
+discord.py
+python-dotenv
+psycopg2-binary
+flask
+google-generativeai
