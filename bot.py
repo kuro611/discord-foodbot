@@ -22,8 +22,6 @@ genai.configure(api_key=GEMINI_API_KEY)
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
-bot.genre_map = {}
-bot.style_map = {}
 
 # PostgreSQLからランダムで料理を取得
 def get_random_food(food_type: str):
@@ -142,10 +140,6 @@ async def on_message(message):
 
     # メンションされたら
     if bot.user.mentioned_in(message):
-        # 初回起動時にマスタ読み込み
-        if not bot.genre_map or not bot.style_map:
-            load_master()
-
         if "過去のおすすめ" in message.content:
             await show_user_history(message.channel, user_id)
             return
