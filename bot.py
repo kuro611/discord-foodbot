@@ -22,6 +22,8 @@ genai.configure(api_key=GEMINI_API_KEY)
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+bot.genre_map={}
+bot.style_map={}
 
 # PostgreSQLからランダムで料理を取得
 def get_random_food(food_type: str):
@@ -74,16 +76,14 @@ async def load_master():
 @bot.tree.command(name="genres", description="ジャンル一覧を表示します")
 async def list_genres(interaction: discord.Interaction):
     if not bot.genre_map:
-        await interaction.response.send_message("ジャンル情報がありません。", ephemeral=True)
-        return
+        load_master()
     text = "📚 登録ジャンル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in bot.genre_map.items()])
     await interaction.response.send_message(text, ephemeral=True)
 
 @bot.tree.command(name="styles", description="スタイル一覧を表示します")
 async def list_styles(interaction: discord.Interaction):
     if not bot.style_map:
-        await interaction.response.send_message("スタイル情報がありません。", ephemeral=True)
-        return
+        load_master()
     text = "🎨 登録スタイル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in bot.style_map.items()])
     await interaction.response.send_message(text, ephemeral=True)
     
@@ -140,6 +140,9 @@ async def on_message(message):
 
     # メンションされたら
     if bot.user.mentioned_in(message):
+        if not bot.genre_map or not bot.style_map:
+            load_master()
+
         if "過去のおすすめ" in message.content:
             await show_user_history(message.channel, user_id)
             return
