@@ -135,14 +135,12 @@ async def on_message(message):
     # 要望返信の処理（直前のコンサルがあれば）
     if user_id in user_states and "genre" in user_states[user_id] and "style" in user_states[user_id] and "request" not in user_states[user_id]:
         user_states[user_id]["request"] = message.content
+        await message.channel.send("🤔 考え中です...")
         await show_consult_result(message.channel, user_id)
         return
 
     # メンションされたら
     if bot.user.mentioned_in(message):
-        if not bot.genre_map or not bot.style_map:
-            await load_master()
-
         if "過去のおすすめ" in message.content:
             await show_user_history(message.channel, user_id)
             return
@@ -256,11 +254,6 @@ async def show_consult_result(target, user_id):
             response = "トラブルブリブリ"
             successflg=False
     else:
-        # Gemini呼び出し前に「考え中です...」表示
-        if isinstance(target, discord.Interaction):
-            await target.response.defer(thinking=True)
-            await target.followup.send("🤔 考え中です...")
-
         # Gemini API呼び出し
         suggestion = get_gemini_suggestion(genre, style, request)
         if suggestion:
