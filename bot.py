@@ -50,7 +50,6 @@ def get_random_food(food_type: str):
 async def on_ready():
     print("🔔 on_ready() が呼ばれました")
     await bot.tree.sync()
-    await load_master()
     print(f"Bot起動完了: {bot.user}")
     
 async def load_master():
@@ -140,6 +139,10 @@ async def on_message(message):
 
     # メンションされたら
     if bot.user.mentioned_in(message):
+        # 初回起動時にマスタ読み込み
+        if not bot.genre_map or not bot.style_map:
+            load_master()
+
         if "過去のおすすめ" in message.content:
             await show_user_history(message.channel, user_id)
             return
@@ -253,6 +256,11 @@ async def show_consult_result(target, user_id):
             response = "トラブルブリブリ"
             successflg=False
     else:
+        # Gemini呼び出し前に「考え中です...」表示
+        if isinstance(target, discord.Interaction):
+            await target.response.defer(thinking=True)
+            await target.followup.send("🤔 考え中です...")
+
         # Gemini API呼び出し
         suggestion = get_gemini_suggestion(genre, style, request)
         if suggestion:
