@@ -76,17 +76,19 @@ async def load_master():
 
 @bot.tree.command(name="genres", description="ジャンル一覧を表示します")
 async def list_genres(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True, ephemeral=True)
     if not genre_map:
         await load_master()
     text = "📚 登録ジャンル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in genre_map.items()])
-    await interaction.response.send_message(text, ephemeral=True)
+    await interaction.followup.send(text, ephemeral=True)
 
 @bot.tree.command(name="styles", description="スタイル一覧を表示します")
 async def list_styles(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True, ephemeral=True)
     if not style_map:
         await load_master()
     text = "🎨 登録スタイル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in style_map.items()])
-    await interaction.response.send_message(text, ephemeral=True)
+    await interaction.followup.send(text, ephemeral=True)
     
 
 # ボタンクラス定義
