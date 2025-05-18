@@ -149,6 +149,8 @@ async def on_message(message):
 
     # メンションされたら
     if bot.user.mentioned_in(message):
+        if "responded" in user_states.get(user_id, {}):
+            return  # 既に反応済み
         if "過去のおすすめ" in message.content:
             await show_user_history(message.channel, user_id)
             return
@@ -427,7 +429,7 @@ class RecipeButton(Button):
             # Geminiで補完
             fallback = get_gemini_recipe(self.food)
             if fallback:
-                await interaction.response.send_message(f"Gemini先生のレシピ案：{fallback}", ephemeral=False)
+                await interaction.response.send_message(f"{self.food}のつくりかた！：{fallback}", ephemeral=False)
             else:
                 await interaction.response.send_message("🥲 該当レシピが見つかりませんでした。がんばって作ろう！", ephemeral=False)
 
