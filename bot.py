@@ -116,8 +116,7 @@ class FoodButton(Button):
             food = get_random_food("2")
             recipe = get_recipe_from_rakuten(food)
             recipe_url = recipe[1] if recipe else None
-            user_states[user_id]["last_food"] = food
-            await interaction.followup.send(f"{food}！", view=RecipeView(recipe_url),ephemeral=False)
+            await interaction.followup.send(f"{food}！", view=RecipeView(food=food, recipe_url=recipe_url),ephemeral=False)
             if "mode" not in state or state["mode"] != "consult":
                 user_states.pop(user_id, None)
         elif self.custom_id == "consult":
@@ -397,32 +396,31 @@ async def show_user_history(channel, user_id):
     await channel.send("\n".join(lines))
 
 class RecipeView(View):
-    def __init__(self, recipe_url=None):
+    def __init__(self, food=None,recipe_url=None):
         super().__init__(timeout=60)
         if recipe_url:
             self.add_item(Button(label="レシピ知りたい！", style=discord.ButtonStyle.link, url=recipe_url))
         else:
-            self.add_item(RecipeButton())
+            self.add_item(RecipeButton(food))
 
 class RecipeButton(Button):
-    def __init__(self):
+    def __init__(self,food):
         super().__init__(label="レシピ知りたい！", style=discord.ButtonStyle.secondary)
+        self.food = food
 
     async def callback(self, interaction: discord.Interaction):
-        user_id = str(interaction.user.id)
-        food = user_states.get(user_id, {}).get("last_food")
-        if not food:
+        if not self.food:
             await interaction.response.send_message("料理名が見つかりませんでした！", ephemeral=True)
             return
 
         # 楽天API呼び出し
-        recipe = get_recipe_from_rakuten(food)
+        recipe = get_recipe_from_rakuten(self.food)
         if recipe:
             title, url = recipe
             await interaction.response.send_message(f"✅ {title}\n{url}", ephemeral=False)
         else:
             # Geminiで補完
-            fallback = get_gemini_recipe(food)
+            fallback = get_gemini_recipe(self.food)
             if fallback:
                 await interaction.response.send_message(f"Gemini先生のレシピ案：{fallback}", ephemeral=False)
             else:
