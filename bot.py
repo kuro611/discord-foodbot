@@ -5,6 +5,7 @@ from discord.ui import View, Button
 from discord import app_commands
 import traceback
 import sys
+import requests
 
 import psycopg2
 import random
@@ -113,7 +114,7 @@ class FoodButton(Button):
                 user_states.pop(user_id, None)
         elif self.custom_id == "cook":
             food = get_random_food("2")
-            await interaction.followup.send(f"{food}！", ephemeral=False)
+            await interaction.followup.send(f"{food}！", view=RecipeView(),ephemeral=False)
             if "mode" not in state or state["mode"] != "consult":
                 user_states.pop(user_id, None)
         elif self.custom_id == "consult":
@@ -391,6 +392,66 @@ async def show_user_history(channel, user_id):
         lines.append(f"{i+1}位： {food}{marks[i]} {{{genre_name}（{style_name}）}}")
 
     await channel.send("\n".join(lines))
+
+class RecipeView(View):
+    def __init__(self):
+        super().__init__(timeout=60)
+        self.add_item(RecipeButton())
+
+class RecipeButton(Button):
+    def __init__(self):
+        super().__init__(label="レシピ知りたい！", style=discord.ButtonStyle.link)
+
+    async def callback(self, interaction: discord.Interaction):
+        user_id = str(interaction.user.id)
+        food = user_states.get(user_id, {}).get("last_food")
+        if not food:
+            await interaction.response.send_message("料理名が見つかりませんでした！", ephemeral=True)
+            return
+
+        # 楽天API呼び出し
+        recipe = get_recipe_from_rakuten(food)
+        if recipe:
+            title, url = recipe
+            await interaction.response.send_message(f"✅ {title}\n{url}", ephemeral=False)
+        else:
+            # Geminiで補完
+            fallback = get_gemini_recipe(food)
+            if fallback:
+                await interaction.response.send_message(f"Gemini先生のレシピ案：{fallback}", ephemeral=False)
+            else:
+                await interaction.response.send_message("🥲 該当レシピが見つかりませんでした。がんばって作ろう！", ephemeral=False)
+
+
+def get_recipe_from_rakuten(food_name):
+    app_id = os.environ.get("RAKUTEN_APP_ID")
+    url = f"https://app.rakuten.co.jp/services/api/Recipe/RecipeKeywordSearch/20170426"
+    params = {
+        "format": "json",
+        "applicationId": app_id,
+        "keyword": food_name
+    }
+
+    try:
+        response = requests.get(url, params=params)
+        data = response.json()
+        if data.get("result"):
+            recipe = data["result"][0]
+            return recipe["recipeTitle"], recipe["recipeUrl"]
+    except Exception as e:
+        print(f"楽天APIエラー: {e}")
+    return None
+
+def get_gemini_recipe(food_name):
+    try:
+        prompt = f"{food_name} のレシピを簡単に教えてください。材料と手順を2文以内で説明してください。"
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"[Gemini代替失敗] {e}")
+        return None
+
 
 # Bot起動
 def run_bot():
