@@ -159,6 +159,7 @@ async def on_message(message):
         # ユーザーを仮で登録（操作開始扱い）
         user_states[str(message.author.id)] = {"mode": "start"}
         await message.channel.send("どれにする？", view = FoodChoiceView())
+        return
 
     await bot.process_commands(message)
 
@@ -398,10 +399,13 @@ async def show_user_history(channel, user_id):
 class RecipeView(View):
     def __init__(self, food=None,recipe_url=None):
         super().__init__(timeout=60)
+        self.food = food  # ← 安全のため保持
+        self.recipe_url = recipe_url
+
         if recipe_url:
             self.add_item(Button(label="レシピ知りたい！", style=discord.ButtonStyle.link, url=recipe_url))
-        else:
-            self.add_item(RecipeButton(food))
+        elif food:
+            self.add_item(RecipeButton(food))    
 
 class RecipeButton(Button):
     def __init__(self,food):
@@ -409,6 +413,7 @@ class RecipeButton(Button):
         self.food = food
 
     async def callback(self, interaction: discord.Interaction):
+        print(f"🍳 レシピ検索対象: {self.food}")  # ← これでデバッグログ出そう
         if not self.food:
             await interaction.response.send_message("料理名が見つかりませんでした！", ephemeral=True)
             return
