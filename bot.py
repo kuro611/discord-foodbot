@@ -90,7 +90,16 @@ async def list_styles(interaction: discord.Interaction):
         await load_master()
     text = "🎨 登録スタイル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in style_map.items()])
     await interaction.followup.send(text, ephemeral=True)
-    
+
+@bot.tree.command(name="reload", description="ジャンル・スタイルのマスタ情報を再読み込みします")
+async def reload_master(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True, ephemeral=True)
+    try:
+        await load_master()
+        await interaction.followup.send("✅ マスタ情報を再取得しました！", ephemeral=True)
+    except Exception as e:
+        print(f"/reloadでのマスタ再取得失敗: {e}")
+        await interaction.followup.send("❌ マスタ情報の再取得に失敗しました…", ephemeral=True)  
 
 # ボタンクラス定義
 class FoodButton(Button):
