@@ -114,7 +114,10 @@ class FoodButton(Button):
                 user_states.pop(user_id, None)
         elif self.custom_id == "cook":
             food = get_random_food("2")
-            await interaction.followup.send(f"{food}！", view=RecipeView(),ephemeral=False)
+            recipe = get_recipe_from_rakuten(food)
+            recipe_url = recipe[1] if recipe else None
+            user_states[user_id]["last_food"] = food
+            await interaction.followup.send(f"{food}！", view=RecipeView(recipe_url),ephemeral=False)
             if "mode" not in state or state["mode"] != "consult":
                 user_states.pop(user_id, None)
         elif self.custom_id == "consult":
@@ -394,13 +397,16 @@ async def show_user_history(channel, user_id):
     await channel.send("\n".join(lines))
 
 class RecipeView(View):
-    def __init__(self):
+    def __init__(self, recipe_url=None):
         super().__init__(timeout=60)
-        self.add_item(RecipeButton())
+        if recipe_url:
+            self.add_item(Button(label="レシピ知りたい！", style=discord.ButtonStyle.link, url=recipe_url))
+        else:
+            self.add_item(RecipeButton())
 
 class RecipeButton(Button):
     def __init__(self):
-        super().__init__(label="レシピ知りたい！", style=discord.ButtonStyle.link)
+        super().__init__(label="レシピ知りたい！", style=discord.ButtonStyle.secondary)
 
     async def callback(self, interaction: discord.Interaction):
         user_id = str(interaction.user.id)
