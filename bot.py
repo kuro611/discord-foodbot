@@ -98,24 +98,26 @@ class FoodButton(Button):
         
         # 保険：user_statesがなければ初期化（またはエラーメッセージにしてもOK）
         state = user_states.setdefault(user_id, {})
+
+        await interaction.response.defer(ephemeral=False)
         
         # 保険：新規ユーザーが途中から押せないように
         if len(user_states) >= 3 and user_id not in user_states:
-            await interaction.response.send_message("他のユーザーが操作中です。待ってね～。", ephemeral=True)
+            await interaction.followup.send("他のユーザーが操作中です。待ってね～。", ephemeral=True)
             return
         
         if self.custom_id == "buy":
             food = get_random_food("1")
-            await interaction.response.send_message(f"{food}！", ephemeral=False)
+            await interaction.followup.send(f"{food}！", ephemeral=False)
             if "mode" not in state or state["mode"] != "consult":
                 user_states.pop(user_id, None)
         elif self.custom_id == "cook":
             food = get_random_food("2")
-            await interaction.response.send_message(f"{food}！", ephemeral=False)
+            await interaction.followup.send(f"{food}！", ephemeral=False)
             if "mode" not in state or state["mode"] != "consult":
                 user_states.pop(user_id, None)
         elif self.custom_id == "consult":
-            await interaction.response.send_message("ジャンルを選んで！", view=GenreView(), ephemeral=False)
+            await interaction.followup.send("ジャンルを選んで！", view=GenreView(), ephemeral=False)
             state["mode"] = "consult"   # 継続中の状態は残す
 
 # ビュー定義（3つのボタンを並べる）
