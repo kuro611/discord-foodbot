@@ -81,7 +81,7 @@ async def list_genres(interaction: discord.Interaction):
     if not genre_map:
         await load_master()
     text = "📚 登録ジャンル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in genre_map.items()])
-    await interaction.followup.send(text, ephemeral=True,delete_after=60)
+    await interaction.followup.send(text, ephemeral=True)
 
 @bot.tree.command(name="styles", description="スタイル一覧を表示します")
 async def list_styles(interaction: discord.Interaction):
@@ -89,17 +89,17 @@ async def list_styles(interaction: discord.Interaction):
     if not style_map:
         await load_master()
     text = "🎨 登録スタイル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in style_map.items()])
-    await interaction.followup.send(text, ephemeral=True,delete_after=60)
+    await interaction.followup.send(text, ephemeral=True)
 
 @bot.tree.command(name="reload", description="ジャンル・スタイルのマスタ情報を再読み込みします")
 async def reload_master(interaction: discord.Interaction):
     await interaction.response.defer(thinking=True, ephemeral=True)
     try:
         await load_master()
-        await interaction.followup.send("✅ マスタ情報を再取得しました！", ephemeral=True,delete_after=60)
+        await interaction.followup.send("✅ マスタ情報を再取得しました！", ephemeral=True)
     except Exception as e:
         print(f"/reloadでのマスタ再取得失敗: {e}")
-        await interaction.followup.send("❌ マスタ情報の再取得に失敗しました…", ephemeral=True,delete_after=60)  
+        await interaction.followup.send("❌ マスタ情報の再取得に失敗しました…", ephemeral=True)  
 
 # ボタンクラス定義
 class FoodButton(Button):
@@ -113,7 +113,7 @@ class FoodButton(Button):
         
         # 保険：新規ユーザーが途中から押せないように
         if len(user_states) >= 3 and user_id not in user_states:
-            await interaction.followup.send("他のユーザーが操作中です。待ってね～。", ephemeral=True,delete_after=30)
+            await interaction.followup.send("他のユーザーが操作中です。待ってね～。", ephemeral=True)
             return
         
         if self.custom_id == "buy":
@@ -129,7 +129,7 @@ class FoodButton(Button):
             if "mode" not in state or state["mode"] != "consult":
                 user_states.pop(user_id, None)
         elif self.custom_id == "consult":
-            await interaction.followup.send("ジャンルを選んで！", view=GenreView(), ephemeral=False,delete_after=60)
+            await interaction.channel.send("ジャンルを選んで！", view=GenreView(),delete_after=60)
             state["mode"] = "consult"   # 継続中の状態は残す
 
 # ビュー定義（3つのボタンを並べる）
@@ -219,10 +219,10 @@ class StyleButton(Button):
         await interaction.response.defer(ephemeral=False)
 
         # 要望入力
-        await interaction.followup.send(
+        await interaction.channel.send(
             "要望があればこのメッセージに返信して!",
             view=RequestView(interaction.message.id),
-            ephemeral=False,delete_after=30
+            delete_after=30
         )
         
 
@@ -426,7 +426,7 @@ class RecipeButton(Button):
     async def callback(self, interaction: discord.Interaction):
         print(f"🍳 レシピ検索対象: {self.food}")  # ← これでデバッグログ出そう
         if not self.food:
-            await interaction.response.send_message("料理名が見つかりませんでした！", ephemeral=True,delete_after=60)
+            await interaction.response.send_message("料理名が見つかりませんでした！", ephemeral=True)
             return
 
         # 楽天API呼び出し
@@ -440,7 +440,7 @@ class RecipeButton(Button):
             if fallback:
                 await interaction.response.send_message(f"{self.food}のつくりかた！：{fallback}", ephemeral=False)
             else:
-                await interaction.response.send_message("🥲 該当レシピが見つかりませんでした。がんばって作ろう！", ephemeral=False,delete_after=60)
+                await interaction.response.send_message("🥲 該当レシピが見つかりませんでした。がんばって作ろう！", ephemeral=False)
 
 
 def get_recipe_from_rakuten(food_name):
@@ -485,7 +485,7 @@ class FoodDetailButton(Button):
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
         explanation = get_food_description(self.food_name)
-        await interaction.followup.send(explanation or "ごめん、うまく説明できんかった🥲",delete_after=60)
+        await interaction.channel.send(explanation or "ごめん、うまく説明できんかった🥲",delete_after=60)
 
 def get_food_description(food_name):
     prompt = f"「{food_name}」ってどんな料理か、簡単に説明してください。"
