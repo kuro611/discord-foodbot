@@ -81,7 +81,7 @@ async def list_genres(interaction: discord.Interaction):
     if not genre_map:
         await load_master()
     text = "📚 登録ジャンル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in genre_map.items()])
-    await interaction.followup.send(text, ephemeral=True)
+    await interaction.followup.send(text, ephemeral=True,delete_after=60)
 
 @bot.tree.command(name="styles", description="スタイル一覧を表示します")
 async def list_styles(interaction: discord.Interaction):
@@ -89,17 +89,17 @@ async def list_styles(interaction: discord.Interaction):
     if not style_map:
         await load_master()
     text = "🎨 登録スタイル一覧：\n" + "\n".join([f"{code} = {name}" for code, name in style_map.items()])
-    await interaction.followup.send(text, ephemeral=True)
+    await interaction.followup.send(text, ephemeral=True,delete_after=60)
 
 @bot.tree.command(name="reload", description="ジャンル・スタイルのマスタ情報を再読み込みします")
 async def reload_master(interaction: discord.Interaction):
     await interaction.response.defer(thinking=True, ephemeral=True)
     try:
         await load_master()
-        await interaction.followup.send("✅ マスタ情報を再取得しました！", ephemeral=True)
+        await interaction.followup.send("✅ マスタ情報を再取得しました！", ephemeral=True,delete_after=60)
     except Exception as e:
         print(f"/reloadでのマスタ再取得失敗: {e}")
-        await interaction.followup.send("❌ マスタ情報の再取得に失敗しました…", ephemeral=True)  
+        await interaction.followup.send("❌ マスタ情報の再取得に失敗しました…", ephemeral=True,delete_after=60)  
 
 # ボタンクラス定義
 class FoodButton(Button):
@@ -113,12 +113,12 @@ class FoodButton(Button):
         
         # 保険：新規ユーザーが途中から押せないように
         if len(user_states) >= 3 and user_id not in user_states:
-            await interaction.followup.send("他のユーザーが操作中です。待ってね～。", ephemeral=True)
+            await interaction.followup.send("他のユーザーが操作中です。待ってね～。", ephemeral=True,delete_after=30)
             return
         
         if self.custom_id == "buy":
             food = get_random_food("1")
-            await interaction.followup.send(f"{food}！", ephemeral=False)
+            await interaction.followup.send(f"{food}！", view=FoodDetailView(food),ephemeral=False)
             if "mode" not in state or state["mode"] != "consult":
                 user_states.pop(user_id, None)
         elif self.custom_id == "cook":
@@ -129,7 +129,7 @@ class FoodButton(Button):
             if "mode" not in state or state["mode"] != "consult":
                 user_states.pop(user_id, None)
         elif self.custom_id == "consult":
-            await interaction.followup.send("ジャンルを選んで！", view=GenreView(), ephemeral=False)
+            await interaction.followup.send("ジャンルを選んで！", view=GenreView(), ephemeral=False,delete_after=60)
             state["mode"] = "consult"   # 継続中の状態は残す
 
 # ビュー定義（3つのボタンを並べる）
@@ -152,7 +152,7 @@ async def on_message(message):
     # 要望返信の処理（直前のコンサルがあれば）
     if user_id in user_states and "genre" in user_states[user_id] and "style" in user_states[user_id] and "request" not in user_states[user_id]:
         user_states[user_id]["request"] = message.content
-        await message.channel.send("🤔 考え中です...")
+        await message.channel.send("🤔 考え中です...",delete_after=30)
         await show_consult_result(message.channel, user_id)
         return
 
@@ -165,11 +165,11 @@ async def on_message(message):
             return
         
         if len(user_states) >= 3 and str(message.author.id) not in user_states:
-            await message.channel.send("現在対応できる人数が上限に達しています。少し待ってね！")
+            await message.channel.send("現在対応できる人数が上限に達しています。少し待ってね！",delete_after=30)
             return
         # ユーザーを仮で登録（操作開始扱い）
         user_states[str(message.author.id)] = {"mode": "start"}
-        await message.channel.send("どれにする？", view = FoodChoiceView())
+        await message.channel.send("どれにする？", view = FoodChoiceView(),delete_after=60)
         return
 
     await bot.process_commands(message)
@@ -192,7 +192,7 @@ class GenreButton(Button):
     async def callback(self, interaction: discord.Interaction):
         user_id = str(interaction.user.id)
         user_states.setdefault(user_id, {})["genre"] = self.genre_code
-        await interaction.response.send_message("さっぱり or がっつり？", view=StyleView(), ephemeral=False)
+        await interaction.response.send_message("さっぱり or がっつり？", view=StyleView(), ephemeral=False,delete_after=60)
 
 # スタイル選択用ビュー
 class StyleView(View):
@@ -210,7 +210,7 @@ class StyleButton(Button):
     async def callback(self, interaction: discord.Interaction):
         user_id = str(interaction.user.id)
         if user_id not in user_states:
-            await interaction.response.send_message("先にジャンルを選んでください！", ephemeral=False)
+            await interaction.response.send_message("先にジャンルを選んでください！", ephemeral=False,delete_after=60)
             return
 
         user_states[user_id]["style"] = self.style_code
@@ -222,7 +222,7 @@ class StyleButton(Button):
         await interaction.followup.send(
             "要望があればこのメッセージに返信して!",
             view=RequestView(interaction.message.id),
-            ephemeral=False
+            ephemeral=False,delete_after=30
         )
         
 
@@ -322,9 +322,9 @@ async def show_consult_result(target, user_id):
             print(f"履歴保存失敗: {e}")
 
     if isinstance(target, discord.Interaction):
-        await target.followup.send(response)
+        await target.followup.send(response,view=FoodDetailView(result_food))
     else:
-        await target.send(response)
+        await target.send(response,view=FoodDetailView(result_food))
 
     # 終わったらユーザー状態クリア
     del user_states[user_id]
@@ -391,11 +391,11 @@ async def show_user_history(channel, user_id):
         conn.close()
     except Exception as e:
         print(f"履歴取得失敗: {e}")
-        await channel.send("履歴を取得できませんでした。")
+        await channel.send("履歴を取得できませんでした。",delete_after=30)
         return
 
     if not rows:
-        await channel.send("履歴が見つかりませんでした。")
+        await channel.send("履歴が見つかりませんでした。",delete_after=30)
         return
 
     marks = ["!!!", "!!", "!"]
@@ -426,7 +426,7 @@ class RecipeButton(Button):
     async def callback(self, interaction: discord.Interaction):
         print(f"🍳 レシピ検索対象: {self.food}")  # ← これでデバッグログ出そう
         if not self.food:
-            await interaction.response.send_message("料理名が見つかりませんでした！", ephemeral=True)
+            await interaction.response.send_message("料理名が見つかりませんでした！", ephemeral=True,delete_after=60)
             return
 
         # 楽天API呼び出し
@@ -440,7 +440,7 @@ class RecipeButton(Button):
             if fallback:
                 await interaction.response.send_message(f"{self.food}のつくりかた！：{fallback}", ephemeral=False)
             else:
-                await interaction.response.send_message("🥲 該当レシピが見つかりませんでした。がんばって作ろう！", ephemeral=False)
+                await interaction.response.send_message("🥲 該当レシピが見つかりませんでした。がんばって作ろう！", ephemeral=False,delete_after=60)
 
 
 def get_recipe_from_rakuten(food_name):
@@ -472,6 +472,30 @@ def get_gemini_recipe(food_name):
         print(f"[Gemini代替失敗] {e}")
         return None
 
+class FoodDetailView(View):
+    def __init__(self, food_name):
+        super().__init__(timeout=60)
+        self.add_item(FoodDetailButton(food_name))
+
+class FoodDetailButton(Button):
+    def __init__(self, food_name):
+        super().__init__(label="それなに～？", style=discord.ButtonStyle.secondary)
+        self.food_name = food_name
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        explanation = get_food_description(self.food_name)
+        await interaction.followup.send(explanation or "ごめん、うまく説明できんかった🥲",delete_after=60)
+
+def get_food_description(food_name):
+    prompt = f"「{food_name}」ってどんな料理か、簡単に説明してください。"
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        return f"{food_name}：{response.text.strip()}"
+    except Exception as e:
+        print(f"[Gemini料理説明失敗] {e}")
+        return None
 
 # Bot起動
 def run_bot():
